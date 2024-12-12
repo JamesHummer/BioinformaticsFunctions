@@ -1,0 +1,2 @@
+##Split a multi-FASTA file into individual FASTA files by awk
+awk '/^>/{s=++d".fa"} {print > s}' multi.fa
