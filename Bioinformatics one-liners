@@ -1,2 +1,6 @@
 ##Split a multi-FASTA file into individual FASTA files by awk
 awk '/^>/{s=++d".fa"} {print > s}' multi.fa
+
+
+##fastq2fasta
+zcat file.fastq.gz | paste - - - - | perl -ane 'print ">$F[0]\n$F[2]\n";' | gzip -c > file.fasta.gz
