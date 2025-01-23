@@ -4,3 +4,6 @@ awk '/^>/{s=++d".fa"} {print > s}' multi.fa
 
 ##fastq2fasta
 zcat file.fastq.gz | paste - - - - | perl -ane 'print ">$F[0]\n$F[2]\n";' | gzip -c > file.fasta.gz
+
+##sequence length of every entry in multiline fasta
+awk '/^>/ {if (seqlen){print seqlen}; print ;seqlen=0;next; } { seqlen = seqlen +length($0)}END{print seqlen}' file.fa
