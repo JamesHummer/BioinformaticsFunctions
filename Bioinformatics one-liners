@@ -10,3 +10,6 @@ awk '/^>/ {if (seqlen){print seqlen}; print ;seqlen=0;next; } { seqlen = seqlen 
 
 ##reverse compliment for primer creation
 echo 'ATTGCTATGCTNNNT' | rev | tr 'ACTG' 'TGAC'
+
+##Split multi-FASTA file into individual FASTA files by awk
+awk '/^>/{s=++d".fa"} {print > s}' multi.fa
