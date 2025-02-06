@@ -13,3 +13,6 @@ echo 'ATTGCTATGCTNNNT' | rev | tr 'ACTG' 'TGAC'
 
 ##Split multi-FASTA file into individual FASTA files by awk
 awk '/^>/{s=++d".fa"} {print > s}' multi.fa
+
+##bam to bed
+samtools view file.bam | perl -F'\t' -ane '$strand=($F[1]&16)?"-":"+";$length=1;$tmp=$F[5];$tmp =~ s/(\d+)[MD]/$length+=$1/eg;print "$F[2]\t$F[3]\t".($F[3]+$length)."\t$F[0]\t0\t$strand\n";' > file.bed
