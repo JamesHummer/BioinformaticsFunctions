@@ -1,0 +1,16 @@
+# Step 1: Run FastQC to check quality of the reads
+fastqc $FASTQ -o fastqc_results/
+  
+# Step 2: Align reads to hg38 using Minimap2
+minimap2 -d ref.mmi ref.fa                     # indexing
+minimap2 -a ref.mmi reads.fq > alignment.sam   # alignment
+
+# Step 3: Convert SAM to BAM and Sort BAM file using Samtools
+samtools view -bS alignment.sam > output.bam
+samtools sort -o output.sam output.bam
+
+# Step 4: Index BAM file for visualization and SV calling
+samtools index output.bam
+
+# Step 5: Call Structural Variants using Sniffles2
+sniffles --input output.bam --snf output.snf
