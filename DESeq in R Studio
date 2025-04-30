@@ -1,0 +1,76 @@
+#Normalization.
+
+#The 'easiest' way will be to run DESEq2 and use the normalized counts
+#object from DESeq2, Look at your past notes and run it below. You have
+#all you need but you might need to play with the metadata file. HINT :
+#df[!(row.names(df) %in% row_names_df_to_remove),] \###
+
+```{r}
+#filter out original counts table of outlier samples
+new_counts <- counts %>% select(-'GSM4615000', -'GSM4614995', -'GSM4614993', -'GSM4614985')
+### Rename metadata columns and filter out outlier samples.
+tmetadata <- as.data.frame(t(metadata))
+new_metadata <- tmetadata %>% select(-'GSM4615000', -'GSM4614995', -'GSM4614993', -'GSM4614985')
+final_metadata <- as.data.frame(t(new_metadata)) %>% select(-geo_accession, -geographical.location.ch1) %>%
+  dplyr::rename('gender' = 'gender.ch1') %>%
+  dplyr::rename('severity' = 'severity.ch1') %>%
+  dplyr::rename('state' = 'disease.state.ch1', 'days' = 'days_post_symptom_onset.ch1')
+```
+
+```{r}
+### DESeq2 setup chunk
+library(DESeq2)
+#create a deseqobject
+dds <- DESeqDataSetFromMatrix(countData = new_counts, 
+                              colData = final_metadata,
+                              design = ~ state)
+## Subset your deseq object
+dds75 <-  dds[(rowSums(counts(dds)) >= 23)]
+
+### fix the base to a preferred column/result
+relevel(dds75$state, ref='Healthy')
+
+### Run deseq2
+deseq_ob <- DESeq(dds75)
+
+#### Save the results to a new object
+res <- results(deseq_ob, alpha = 0.05)
+```
+
+```{r}
+### Print a volcano
+# Add a column to mark significance
+res$threshold <- as.factor(res$padj < 0.05 & abs(res$log2FoldChange) > 1)
+
+# Plot
+ggplot(res, aes(x=log2FoldChange, y=-log10(padj), color=threshold)) +
+  geom_point(alpha=0.6, size=1.5) +
+  scale_color_manual(values=c("grey", "red")) +
+  theme_minimal() +
+  labs(title="Volcano Plot", x="log2 Fold Change", y="-log10 Adjusted P-value") +
+  theme(legend.title=element_blank())
+```
+
+
+```{r}
+### Subset for a heatmap
+vsd <- vst(dds75, blind=FALSE) 
+# Subset by adjusted p-value and log2FC
+sig_genes <- res[which(res$padj < 0.05 & abs(res$log2FoldChange) > 1), ]
+# Keep top 30 genes by significance (optional)
+top_genes <- head(rownames(sig_genes[order(sig_genes$padj), ]), 30)
+mat <- assay(vsd)[top_genes, ]  # matrix of transformed counts
+mat <- mat - rowMeans(mat)      # optional: center the rows
+
+```
+
+```{r}
+### Print your heatmap
+library(pheatmap)
+pheatmap(mat, 
+         cluster_rows=TRUE, 
+         cluster_cols=TRUE, 
+         show_rownames=TRUE, 
+         scale="row", 
+         fontsize=10,)
+```
